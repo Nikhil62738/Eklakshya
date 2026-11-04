@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node services/seedData.js",
+    "test:booking": "node services/testIndividualBooking.js",
     "test:email": "node services/testBrevo.js"
   },
   "dependencies": {

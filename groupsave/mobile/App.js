@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { AppProvider, useApp } from './src/context/AppContext';
 
-// 11 Screens corresponding to the design
+// 11 Original Screens matching reference image
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ServiceListScreen from './src/screens/ServiceListScreen';
@@ -26,8 +26,18 @@ import BookingConfirmedScreen from './src/screens/BookingConfirmedScreen';
 import BookingDetailsScreen from './src/screens/BookingDetailsScreen';
 import MyBookingsScreen from './src/screens/MyBookingsScreen';
 
+// Auth Screens
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+import OtpVerifyScreen from './src/screens/OtpVerifyScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+
 const SCREENS = [
   { key: 'WELCOME', name: '1. Welcome & Onboarding' },
+  { key: 'LOGIN', name: '   ↳ Sign In' },
+  { key: 'REGISTER', name: '   ↳ Sign Up' },
+  { key: 'OTP_VERIFY', name: '   ↳ OTP Verification' },
+  { key: 'FORGOT_PASSWORD', name: '   ↳ Forgot Password' },
   { key: 'HOME', name: '2. Home & Discovery' },
   { key: 'SERVICE_LIST', name: '3. AC Servicing Listing' },
   { key: 'SERVICE_DETAIL_SINGLE', name: '4. Service Details (Single)' },
@@ -48,6 +58,14 @@ function MainNavigator() {
     switch (currentScreen) {
       case 'WELCOME':
         return <WelcomeScreen />;
+      case 'LOGIN':
+        return <LoginScreen />;
+      case 'REGISTER':
+        return <RegisterScreen />;
+      case 'OTP_VERIFY':
+        return <OtpVerifyScreen />;
+      case 'FORGOT_PASSWORD':
+        return <ForgotPasswordScreen />;
       case 'HOME':
         return <HomeScreen />;
       case 'SERVICE_LIST':
@@ -106,6 +124,7 @@ function MainNavigator() {
             <ScrollView showsVerticalScrollIndicator={false} style={styles.screenList}>
               {SCREENS.map((s, index) => {
                 const isSelected = currentScreen === s.key;
+                const isAuthScreen = ['LOGIN', 'REGISTER', 'OTP_VERIFY', 'FORGOT_PASSWORD'].includes(s.key);
                 return (
                   <TouchableOpacity
                     key={s.key}
@@ -115,9 +134,17 @@ function MainNavigator() {
                       setMenuVisible(false);
                     }}
                   >
-                    <View style={[styles.badgeNumber, isSelected && styles.badgeNumberActive]}>
-                      <Text style={[styles.badgeNumberText, isSelected && styles.badgeNumberTextActive]}>
-                        {index + 1}
+                    <View style={[
+                      styles.badgeNumber, 
+                      isSelected && styles.badgeNumberActive,
+                      isAuthScreen && !isSelected && styles.badgeNumberAuth,
+                    ]}>
+                      <Text style={[
+                        styles.badgeNumberText, 
+                        isSelected && styles.badgeNumberTextActive,
+                        isAuthScreen && !isSelected && styles.badgeNumberTextAuth,
+                      ]}>
+                        {isAuthScreen ? '→' : index + 1 - (index > 0 ? Math.min(index, 4) : 0)}
                       </Text>
                     </View>
                     <Text style={[styles.screenItemText, isSelected && styles.screenItemTextActive]}>
@@ -187,7 +214,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 36,
     paddingHorizontal: 16,
-    maxHeight: '75%',
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -210,10 +237,10 @@ const styles = StyleSheet.create({
   screenItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 11,
     paddingHorizontal: 12,
     borderRadius: 12,
-    marginBottom: 6,
+    marginBottom: 4,
     backgroundColor: '#F9FAFB',
   },
   screenItemActive: {
@@ -231,6 +258,9 @@ const styles = StyleSheet.create({
   badgeNumberActive: {
     backgroundColor: '#075B46',
   },
+  badgeNumberAuth: {
+    backgroundColor: '#FEF3C7',
+  },
   badgeNumberText: {
     fontSize: 12,
     fontWeight: '700',
@@ -239,9 +269,12 @@ const styles = StyleSheet.create({
   badgeNumberTextActive: {
     color: '#FFFFFF',
   },
+  badgeNumberTextAuth: {
+    color: '#D97706',
+  },
   screenItemText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#374151',
   },

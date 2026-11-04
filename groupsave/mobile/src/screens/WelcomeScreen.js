@@ -85,7 +85,7 @@ export default function WelcomeScreen() {
         <View style={styles.actionsSection}>
           <TouchableOpacity
             style={styles.getStartedBtn}
-            onPress={() => navigate('HOME')}
+            onPress={() => navigate('REGISTER')}
             activeOpacity={0.85}
           >
             <Text style={styles.getStartedText}>Get Started</Text>
@@ -93,7 +93,7 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             style={styles.signInBtn}
-            onPress={() => navigate('HOME')}
+            onPress={() => navigate('LOGIN')}
             activeOpacity={0.8}
           >
             <Text style={styles.signInText}>Sign In</Text>

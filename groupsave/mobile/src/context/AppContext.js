@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState } from 'react';
 import { INITIAL_CART, INITIAL_BOOKINGS, PROVIDERS } from '../data/mockData';
+import * as authService from '../services/authService';
+import * as bookingService from '../services/bookingService';
+import { setAuthToken as setGlobalAuthToken } from '../services/api';
 
 const AppContext = createContext();
 
@@ -25,13 +28,21 @@ export const AppProvider = ({ children }) => {
   // Coupon state
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
-  // User profile state
+  // Auth & User State
+  const [authToken, setAuthTokenState] = useState(null);
   const [user, setUser] = useState({
     name: 'Nikhil Chopade',
     mobile: '9876543210',
-    email: 'nikhil@example.com',
+    email: 'nikhil@groupsave.demo',
     address: 'Room 101, DBATU Hostel, Lonere',
   });
+
+  const setAuthToken = (token) => {
+    setAuthTokenState(token);
+    setGlobalAuthToken(token);
+  };
+
+  const isLoggedIn = !!authToken;
 
   // ─── Navigation ──────────────────────────────────────────────────────────────
 
@@ -56,6 +67,63 @@ export const AppProvider = ({ children }) => {
       setCurrentScreen(prevScreen);
     } else {
       setCurrentScreen('HOME');
+    }
+  };
+
+  // ─── Auth API Helpers ────────────────────────────────────────────────────────
+
+  const loginWithCredentials = async (identifier, password) => {
+    try {
+      const res = await authService.login(identifier, password);
+      if (res.token) {
+        setAuthToken(res.token);
+        if (res.user) {
+          setUser({
+            id: res.user.id,
+            name: res.user.name,
+            mobile: res.user.phone,
+            email: res.user.email,
+            address: res.user.addresses?.[0]
+              ? `${res.user.addresses[0].flatNo}, ${res.user.addresses[0].society}, ${res.user.addresses[0].locality}`
+              : user.address,
+          });
+        }
+      }
+      return { success: true, user: res.user };
+    } catch (err) {
+      // Fallback for demo when backend is offline
+      if (err.isNetworkError) {
+        setUser(u => ({ ...u, email: identifier.includes('@') ? identifier : u.email, mobile: !identifier.includes('@') ? identifier : u.mobile }));
+        return { success: true, offline: true };
+      }
+      throw err;
+    }
+  };
+
+  const registerUser = async (name, email, phone, password) => {
+    try {
+      const res = await authService.register({ name, email, phone, password });
+      if (res.token) {
+        setAuthToken(res.token);
+        if (res.user) {
+          setUser({
+            id: res.user.id,
+            name: res.user.name,
+            mobile: res.user.phone,
+            email: res.user.email,
+            address: res.user.addresses?.[0]
+              ? `${res.user.addresses[0].flatNo}, ${res.user.addresses[0].society}, ${res.user.addresses[0].locality}`
+              : user.address,
+          });
+        }
+      }
+      return { success: true, user: res.user };
+    } catch (err) {
+      if (err.isNetworkError) {
+        setUser({ name, email, mobile: phone, address: 'Room 101, DBATU Hostel, Lonere' });
+        return { success: true, offline: true };
+      }
+      throw err;
     }
   };
 
@@ -100,14 +168,14 @@ export const AppProvider = ({ children }) => {
 
   const couponDiscount = appliedCoupon ? (COUPON_DISCOUNTS[appliedCoupon] || 0) : 0;
 
-  // Computed totals — always derived from cartItems
+  // Computed totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalAmount = Math.max(0, subtotal - couponDiscount);
-  const totalSavings = 403 + couponDiscount; // 403 = mock group discount from reference image
+  const totalSavings = 403 + couponDiscount;
 
-  // ─── Booking Confirmation (Mock Flow) ────────────────────────────────────────
+  // ─── Booking Confirmation ────────────────────────────────────────────────────
 
-  const confirmCurrentBooking = (paymentMethod = 'UPI') => {
+  const confirmCurrentBooking = async (paymentMethod = 'UPI') => {
     const bookingId = generateBookingId();
     const primaryItem = cartItems[0] || {
       title: 'AC Servicing (Single)',
@@ -117,9 +185,9 @@ export const AppProvider = ({ children }) => {
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short', year: undefined,
+      day: 'numeric', month: 'short',
     });
-    const timeStr = '10:00 AM'; // matches screenshot
+    const timeStr = '10:00 AM';
 
     const serviceOTP = String(Math.floor(1000 + Math.random() * 9000));
 
@@ -180,9 +248,14 @@ export const AppProvider = ({ children }) => {
       // Category
       activeCategory,
       setActiveCategory,
-      // User
+      // User & Auth
       user,
       setUser,
+      authToken,
+      setAuthToken,
+      isLoggedIn,
+      loginWithCredentials,
+      registerUser,
     }}>
       {children}
     </AppContext.Provider>

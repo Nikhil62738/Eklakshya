@@ -3,6 +3,14 @@ import { INITIAL_CART, INITIAL_BOOKINGS, PROVIDERS } from '../data/mockData';
 
 const AppContext = createContext();
 
+// Generate a GroupSave booking ID: GS + YYYYMMDD + 6-digit random
+const generateBookingId = () => {
+  const now = new Date();
+  const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const rand = Math.floor(100000 + Math.random() * 900000);
+  return `GS${date}${rand}`;
+};
+
 export const AppProvider = ({ children }) => {
   const [currentScreen, setCurrentScreen] = useState('WELCOME');
   const [navStack, setNavStack] = useState(['WELCOME']);
@@ -14,7 +22,19 @@ export const AppProvider = ({ children }) => {
   const [selectedBooking, setSelectedBooking] = useState(INITIAL_BOOKINGS[0]);
   const [activeCategory, setActiveCategory] = useState('AC Service');
 
-  // Push to screen with navigation history
+  // Coupon state
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  // User profile state
+  const [user, setUser] = useState({
+    name: 'Nikhil Chopade',
+    mobile: '9876543210',
+    email: 'nikhil@example.com',
+    address: 'Room 101, DBATU Hostel, Lonere',
+  });
+
+  // ─── Navigation ──────────────────────────────────────────────────────────────
+
   const navigate = (screenName, params = {}) => {
     if (params.provider) setSelectedProvider(params.provider);
     if (params.booking) setSelectedBooking(params.booking);
@@ -23,12 +43,10 @@ export const AppProvider = ({ children }) => {
     setNavStack(prev => [...prev, screenName]);
     setCurrentScreen(screenName);
 
-    // Sync bottom tab if screen is main tab
     if (screenName === 'HOME') setActiveTab('home');
     if (screenName === 'MY_BOOKINGS') setActiveTab('bookings');
   };
 
-  // Back action
   const goBack = () => {
     if (navStack.length > 1) {
       const newStack = [...navStack];
@@ -41,7 +59,8 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Cart operations
+  // ─── Cart Operations ─────────────────────────────────────────────────────────
+
   const updateQuantity = (id, delta) => {
     setCartItems(prev => prev.map(item => {
       if (item.id === id) {
@@ -70,61 +89,100 @@ export const AppProvider = ({ children }) => {
     setCartItems([]);
   };
 
+  // ─── Coupon / Pricing ─────────────────────────────────────────────────────────
+
+  const COUPON_DISCOUNTS = {
+    WELCOME50: 50,
+    GROUPSAVE150: 150,
+    NEIGHBOR20: 20,
+    DIWALI100: 100,
+  };
+
+  const couponDiscount = appliedCoupon ? (COUPON_DISCOUNTS[appliedCoupon] || 0) : 0;
+
+  // Computed totals — always derived from cartItems
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalAmount = Math.max(0, subtotal - couponDiscount);
+  const totalSavings = 403 + couponDiscount; // 403 = mock group discount from reference image
+
+  // ─── Booking Confirmation (Mock Flow) ────────────────────────────────────────
+
   const confirmCurrentBooking = (paymentMethod = 'UPI') => {
-    const bookingId = 'GS20250921001'; // Matches screenshot
+    const bookingId = generateBookingId();
     const primaryItem = cartItems[0] || {
       title: 'AC Servicing (Single)',
       providerName: 'Cool Air Experts',
-      price: 599
+      price: 599,
     };
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short', year: undefined,
+    });
+    const timeStr = '10:00 AM'; // matches screenshot
+
+    const serviceOTP = String(Math.floor(1000 + Math.random() * 9000));
 
     const newBooking = {
       id: bookingId,
       title: primaryItem.title.includes('(') ? primaryItem.title : `${primaryItem.title} (Single)`,
       providerName: primaryItem.providerName || 'Cool Air Experts',
-      date: '21 Sep, 10:00 AM',
+      date: `${dateStr}, ${timeStr}`,
       price: `₹${totalAmount || 599}`,
       status: 'Upcoming',
-      address: 'Room 101, DBATU Hostel, Lonere',
+      address: user.address || 'Room 101, DBATU Hostel, Lonere',
       providerRating: '4.8 (1.2k reviews)',
-      serviceOTP: '4829',
+      serviceOTP,
       paymentMethod,
-      step: 2, // Booked (1) -> Upcoming (2) -> In Progress (3) -> Completed (4)
-      image: primaryItem.image || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=300&q=80'
+      step: 2,
+      image: primaryItem.image || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=300&q=80',
     };
 
     setSelectedBooking(newBooking);
     setBookings(prev => [newBooking, ...prev.filter(b => b.id !== bookingId)]);
+    clearCart();
+    setAppliedCoupon(null);
     navigate('BOOKING_CONFIRMED', { booking: newBooking });
   };
 
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const totalSavings = 403; // matches the image "You are saving ₹403"
-
   return (
     <AppContext.Provider value={{
+      // Screen navigation
       currentScreen,
       setCurrentScreen,
       navigate,
       goBack,
       activeTab,
       setActiveTab,
+      // Cart
       cartItems,
       updateQuantity,
       removeFromCart,
       addToCart,
       clearCart,
-      confirmCurrentBooking,
+      // Coupon
+      appliedCoupon,
+      setAppliedCoupon,
+      couponDiscount,
+      // Totals
       totalAmount,
       totalSavings,
+      subtotal,
+      // Booking
+      confirmCurrentBooking,
       bookings,
       setBookings,
+      // Provider/Booking selection
       selectedProvider,
       setSelectedProvider,
       selectedBooking,
       setSelectedBooking,
+      // Category
       activeCategory,
-      setActiveCategory
+      setActiveCategory,
+      // User
+      user,
+      setUser,
     }}>
       {children}
     </AppContext.Provider>
@@ -132,4 +190,3 @@ export const AppProvider = ({ children }) => {
 };
 
 export const useApp = () => useContext(AppContext);
-

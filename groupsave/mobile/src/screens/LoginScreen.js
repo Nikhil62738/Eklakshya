@@ -220,3 +220,4 @@ const styles = StyleSheet.create({
   footerText: { fontSize: 14, color: COLORS.textMuted },
   footerLink: { fontSize: 14, fontWeight: '800', color: COLORS.primary },
 });
+

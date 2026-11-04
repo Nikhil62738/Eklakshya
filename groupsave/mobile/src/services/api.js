@@ -1,8 +1,12 @@
 // GroupSave Mobile API Client
-// Handles authorization tokens, base URL routing, and error handling
+// Hosted on Render: https://eklakshya.onrender.com
 
-const API_BASE = 'http://10.0.2.2:5000/api'; // Android Emulator default
-// For physical devices, change to your computer's LAN IP e.g. http://192.168.1.x:5000/api
+// Production Render backend URL with local fallback
+export const PRODUCTION_API_URL = 'https://eklakshya.onrender.com/api';
+export const LOCAL_DEV_API_URL = 'http://10.0.2.2:5000/api';
+
+// Active base URL pointing to Render
+export const API_BASE = PRODUCTION_API_URL;
 
 let authToken = null;
 
@@ -37,7 +41,6 @@ export const api = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    // If network failure or backend unreachable, rethrow clean error
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       const netErr = new Error('Cannot connect to GroupSave server. Operating in offline demo mode.');
       netErr.isNetworkError = true;
@@ -46,4 +49,3 @@ export const api = async (endpoint, options = {}) => {
     throw error;
   }
 };
-

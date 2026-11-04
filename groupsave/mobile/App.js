@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
   Modal, 
   Text, 
   TouchableOpacity, 
-  ScrollView 
+  ScrollView,
+  Alert 
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 
 import { AppProvider, useApp } from './src/context/AppContext';
 
@@ -32,6 +33,10 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import OtpVerifyScreen from './src/screens/OtpVerifyScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 
+// Remote Update via GitHub Releases
+import UpdateModal from './src/components/UpdateModal';
+import { checkForAppUpdate, CURRENT_VERSION } from './src/services/updateService';
+
 const SCREENS = [
   { key: 'WELCOME', name: '1. Welcome & Onboarding' },
   { key: 'LOGIN', name: '   ↳ Sign In' },
@@ -53,6 +58,66 @@ const SCREENS = [
 function MainNavigator() {
   const { currentScreen, setCurrentScreen } = useApp();
   const [menuVisible, setMenuVisible] = useState(false);
+
+  // Remote Update State
+  const [updateVisible, setUpdateVisible] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  // Check for updates on startup (non-blocking)
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const info = await checkForAppUpdate();
+        if (isMounted && info.updateAvailable) {
+          setUpdateInfo(info);
+          setUpdateVisible(true);
+        }
+      } catch (err) {
+        // Silently ignore startup network issues
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Manual Check Trigger
+  const handleManualCheck = async () => {
+    setCheckingUpdate(true);
+    try {
+      const info = await checkForAppUpdate();
+      setCheckingUpdate(false);
+      if (info.updateAvailable) {
+        setUpdateInfo(info);
+        setUpdateVisible(true);
+        setMenuVisible(false);
+      } else {
+        Alert.alert(
+          'Up to Date! 🎉',
+          `You are running the latest version of GroupSave (v${CURRENT_VERSION}).\n\nGitHub repo: Nikhil62738/Eklakshya`
+        );
+      }
+    } catch (e) {
+      setCheckingUpdate(false);
+      Alert.alert('Update Check Failed', e.message);
+    }
+  };
+
+  // Demo Update Dialog Preview
+  const handlePreviewUpdate = () => {
+    setUpdateInfo({
+      updateAvailable: true,
+      currentVersion: CURRENT_VERSION,
+      latestVersion: '1.1.0',
+      releaseName: 'v1.1.0 — Hyperlocal Group Discounts',
+      releaseNotes: '• Live backend connected to https://eklakshya.onrender.com\n• Direct APK updates from GitHub Releases\n• Performance optimizations and smooth animations\n• 100% full refund guarantee for individual bookings',
+      downloadUrl: 'https://github.com/Nikhil62738/Eklakshya/releases',
+      apkSize: '24 MB',
+      isMandatory: false,
+    });
+    setMenuVisible(false);
+    setUpdateVisible(true);
+  };
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -156,10 +221,44 @@ function MainNavigator() {
                   </TouchableOpacity>
                 );
               })}
+
+              {/* Remote Update Actions Footer */}
+              <View style={styles.updateSection}>
+                <Text style={styles.updateSectionTitle}>Remote Updates (GitHub Releases)</Text>
+                
+                <View style={styles.updateBtnRow}>
+                  <TouchableOpacity
+                    style={styles.checkUpdateBtn}
+                    onPress={handleManualCheck}
+                    disabled={checkingUpdate}
+                  >
+                    <Feather name="refresh-cw" size={12} color="#075B46" style={{ marginRight: 6 }} />
+                    <Text style={styles.checkUpdateText}>
+                      {checkingUpdate ? 'Checking GitHub...' : 'Check for Updates'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.previewUpdateBtn}
+                    onPress={handlePreviewUpdate}
+                  >
+                    <Ionicons name="cloud-download-outline" size={13} color="#075B46" style={{ marginRight: 6 }} />
+                    <Text style={styles.previewUpdateText}>Preview Dialog</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
             </ScrollView>
           </View>
         </View>
       </Modal>
+
+      {/* Remote Update Modal */}
+      <UpdateModal
+        visible={updateVisible}
+        updateInfo={updateInfo}
+        onDismiss={() => setUpdateVisible(false)}
+      />
     </View>
   );
 }
@@ -214,7 +313,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 36,
     paddingHorizontal: 16,
-    maxHeight: '80%',
+    maxHeight: '82%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -281,5 +380,55 @@ const styles = StyleSheet.create({
   screenItemTextActive: {
     color: '#075B46',
     fontWeight: '700',
+  },
+  updateSection: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  updateSectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  updateBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  checkUpdateBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  checkUpdateText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#075B46',
+  },
+  previewUpdateBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: '#DDF5EA',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  previewUpdateText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#075B46',
   },
 });

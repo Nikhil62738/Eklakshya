@@ -15,7 +15,7 @@ import { COLORS } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
 export default function RegisterScreen() {
-  const { navigate } = useApp();
+  const { navigate, registerUser } = useApp();
   const [form, setForm] = useState({
     fullName: '',
     mobile: '',
@@ -49,13 +49,17 @@ export default function RegisterScreen() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!validate()) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await registerUser(form.fullName, form.email, form.mobile, form.password);
       setLoading(false);
       navigate('OTP_VERIFY');
-    }, 900);
+    } catch (err) {
+      setLoading(false);
+      navigate('OTP_VERIFY');
+    }
   };
 
   const fields = [

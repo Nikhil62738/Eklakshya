@@ -16,7 +16,7 @@ import { useApp } from '../context/AppContext';
 import BottomNav from '../components/BottomNav';
 
 export default function HomeScreen() {
-  const { navigate, setActiveCategory } = useApp();
+  const { navigate, setActiveCategory, isLoggedIn } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
 
   const renderCategoryIcon = (item) => {
@@ -63,14 +63,24 @@ export default function HomeScreen() {
             <Feather name="chevron-down" size={16} color={COLORS.textDark} />
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.notificationBtn} 
-            activeOpacity={0.7}
-            onPress={() => navigate('MY_BOOKINGS')}
-          >
-            <Feather name="bell" size={20} color={COLORS.textDark} />
-            <View style={styles.notifBadge} />
-          </TouchableOpacity>
+          <View style={styles.topBarRight}>
+            <TouchableOpacity 
+              style={styles.notificationBtn} 
+              activeOpacity={0.7}
+              onPress={() => navigate('MY_BOOKINGS')}
+            >
+              <Feather name="bell" size={20} color={COLORS.textDark} />
+              <View style={styles.notifBadge} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.profileBtn} 
+              activeOpacity={0.7}
+              onPress={() => navigate(isLoggedIn ? 'PROFILE' : 'LOGIN')}
+            >
+              <Feather name="user" size={18} color={COLORS.textDark} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView 
@@ -225,6 +235,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: COLORS.textDark,
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  profileBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
   },
   notificationBtn: {
     width: 38,

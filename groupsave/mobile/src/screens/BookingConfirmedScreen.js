@@ -63,7 +63,7 @@ export default function BookingConfirmedScreen() {
             <View style={styles.itemInfo}>
               <Text style={styles.itemTitle}>AC Servicing (Single)</Text>
               <Text style={styles.providerName}>Cool Air Experts</Text>
-              <Text style={styles.metaText}>₹599 • 21 Sep, 10:00 AM</Text>
+              <Text style={styles.metaText}>{selectedBooking?.price || '₹599'} • {selectedBooking?.date || '21 Sep, 10:00 AM'}</Text>
             </View>
           </View>
 

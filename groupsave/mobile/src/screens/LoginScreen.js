@@ -15,9 +15,9 @@ import { COLORS } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
 export default function LoginScreen() {
-  const { navigate } = useApp();
-  const [mobile, setMobile] = useState('');
-  const [password, setPassword] = useState('');
+  const { navigate, loginWithCredentials } = useApp();
+  const [mobile, setMobile] = useState('nikhil@groupsave.demo');
+  const [password, setPassword] = useState('Test@123');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -35,14 +35,17 @@ export default function LoginScreen() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!validate()) return;
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await loginWithCredentials(mobile, password);
       setLoading(false);
       navigate('HOME');
-    }, 800);
+    } catch (err) {
+      setLoading(false);
+      setErrors({ mobile: err.message || 'Login failed. Please check your credentials.' });
+    }
   };
 
   return (

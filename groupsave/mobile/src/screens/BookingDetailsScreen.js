@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -19,6 +19,13 @@ export default function BookingDetailsScreen() {
   const [bookingStatus, setBookingStatus] = useState(selectedBooking?.status || 'Scheduled');
   const [scheduledDate, setScheduledDate] = useState(selectedBooking?.date || '21 Sep, 10:00 AM');
 
+  useEffect(() => {
+    if (selectedBooking) {
+      setBookingStatus(selectedBooking.status || 'Scheduled');
+      setScheduledDate(selectedBooking.date || '21 Sep, 10:00 AM');
+    }
+  }, [selectedBooking]);
+
   const booking = selectedBooking || {
     id: 'GS20250921001',
     title: 'AC Servicing (Single)',
@@ -30,6 +37,8 @@ export default function BookingDetailsScreen() {
     serviceOTP: '4829',
     step: 2
   };
+
+  const refundAmount = booking.price ? String(booking.price).replace(/[^0-9]/g, '') : '599';
 
   const handleCall = () => {
     Alert.alert('Calling Provider', `Dialing ${booking.providerName} at +91 9845012345...`);
@@ -44,8 +53,26 @@ export default function BookingDetailsScreen() {
       'Reschedule Service',
       'Select a new slot for your service:',
       [
-        { text: 'Tomorrow, 11:00 AM', onPress: () => setScheduledDate('22 Sep, 11:00 AM') },
-        { text: 'Sunday, 02:00 PM', onPress: () => setScheduledDate('23 Sep, 02:00 PM') },
+        { 
+          text: 'Tomorrow, 11:00 AM', 
+          onPress: () => {
+            const newDate = 'Tomorrow, 11:00 AM';
+            setScheduledDate(newDate);
+            if (setBookings && booking.id) {
+              setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, date: newDate } : b));
+            }
+          } 
+        },
+        { 
+          text: 'Sunday, 02:00 PM', 
+          onPress: () => {
+            const newDate = 'Sunday, 02:00 PM';
+            setScheduledDate(newDate);
+            if (setBookings && booking.id) {
+              setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, date: newDate } : b));
+            }
+          } 
+        },
         { text: 'Cancel', style: 'cancel' }
       ]
     );
@@ -54,7 +81,7 @@ export default function BookingDetailsScreen() {
   const handleCancel = () => {
     Alert.alert(
       'Cancel Booking',
-      'Are you sure you want to cancel this booking? 100% full refund of ₹599 will be returned to your original payment method.',
+      `Are you sure you want to cancel this booking? 100% full refund of ₹${refundAmount} will be returned to your original payment method.`,
       [
         { text: 'No, Keep Booking', style: 'cancel' },
         { 
@@ -62,7 +89,10 @@ export default function BookingDetailsScreen() {
           style: 'destructive',
           onPress: () => {
             setBookingStatus('Cancelled');
-            Alert.alert('Refund Initiated', 'Your booking is cancelled. Refund Reference: GS-REF-' + Math.floor(100000 + Math.random() * 900000));
+            if (setBookings && booking.id) {
+              setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'Cancelled' } : b));
+            }
+            Alert.alert('Refund Initiated', `Your booking is cancelled. 100% full refund of ₹${refundAmount} will be returned. Refund Ref: GS-REF-` + Math.floor(100000 + Math.random() * 900000));
           }
         }
       ]

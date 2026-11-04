@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppProvider, useApp } from './src/context/AppContext';
 
-// 11 Original Screens matching reference image
+// Core Screens
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ServiceListScreen from './src/screens/ServiceListScreen';
@@ -20,6 +20,7 @@ import PaymentScreen from './src/screens/PaymentScreen';
 import BookingConfirmedScreen from './src/screens/BookingConfirmedScreen';
 import BookingDetailsScreen from './src/screens/BookingDetailsScreen';
 import MyBookingsScreen from './src/screens/MyBookingsScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 
 // Auth Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -87,6 +88,8 @@ function MainNavigator() {
         return <BookingDetailsScreen />;
       case 'MY_BOOKINGS':
         return <MyBookingsScreen />;
+      case 'PROFILE':
+        return <ProfileScreen />;
       default:
         return <WelcomeScreen />;
     }

@@ -79,28 +79,50 @@ export default function CartScreen() {
         <Header title={`Your Cart (${cartItems.length} items)`} showBack={true} />
 
         {/* Segmented Filter Pills */}
-        <View style={styles.tabRow}>
-          {['ALL', 'Single (1)', 'Group (1)'].map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[styles.tabPill, isActive && styles.tabPillActive]}
-                onPress={() => setActiveTab(tab)}
-                activeOpacity={0.75}
-              >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-                  {tab}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {cartItems.length > 0 && (
+          <View style={styles.tabRow}>
+            {['ALL', 'Single (1)', 'Group (1)'].map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  style={[styles.tabPill, isActive && styles.tabPillActive]}
+                  onPress={() => setActiveTab(tab)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                    {tab}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
-        <ScrollView 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        >
+        {cartItems.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconCircle}>
+              <Feather name="shopping-bag" size={44} color={COLORS.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>Your cart is empty</Text>
+            <Text style={styles.emptySubtitle}>
+              Explore our wide range of home services and book together to unlock exclusive group savings!
+            </Text>
+            <TouchableOpacity 
+              style={styles.exploreBtn} 
+              onPress={() => navigate('HOME')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.exploreBtnText}>Explore Services</Text>
+              <Feather name="arrow-right" size={16} color={COLORS.white} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+            >
           {/* Cart Items */}
           {cartItems.map((item) => {
             const isGroup = item.type === 'GROUP';
@@ -262,6 +284,8 @@ export default function CartScreen() {
           </TouchableOpacity>
 
         </View>
+        </>
+        )}
 
       </View>
     </SafeAreaView>
@@ -406,4 +430,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: 8,
   },
   proceedText: { color: COLORS.white, fontSize: 15, fontWeight: '800' },
+  // Empty State
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 60,
+  },
+  emptyIconCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#DDF5EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textDark,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  exploreBtn: {
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 24,
+  },
+  exploreBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

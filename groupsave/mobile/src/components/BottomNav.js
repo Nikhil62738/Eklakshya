@@ -1,15 +1,25 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 
 export default function BottomNav() {
-  const { activeTab, setActiveTab, navigate } = useApp();
+  const { activeTab, setActiveTab, navigate, isLoggedIn } = useApp();
 
   const handleTabPress = (tabName, screenName) => {
     setActiveTab(tabName);
     navigate(screenName);
+  };
+
+  const handleProfilePress = () => {
+    setActiveTab('profile');
+    if (isLoggedIn) {
+      navigate('PROFILE');
+    } else {
+      // Redirect to login page as requested
+      navigate('LOGIN');
+    }
   };
 
   return (
@@ -62,10 +72,10 @@ export default function BottomNav() {
         </Text>
       </TouchableOpacity>
 
-      {/* Profile Tab */}
+      {/* Profile Tab -> Redirects to Login page */}
       <TouchableOpacity 
         style={styles.tabItem} 
-        onPress={() => handleTabPress('profile', 'WELCOME')}
+        onPress={handleProfilePress}
         activeOpacity={0.7}
       >
         <Feather 
@@ -110,4 +120,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-

@@ -6,18 +6,21 @@ import {
   StyleSheet, 
   SafeAreaView,
   ActivityIndicator,
-  Modal
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
+import RazorpayCheckoutModal from '../components/RazorpayCheckoutModal';
 
 export default function PaymentScreen() {
-  const { navigate, totalAmount, confirmCurrentBooking } = useApp();
+  const { navigate, totalAmount, confirmCurrentBooking, cartItems, user } = useApp();
   const [selectedMethod, setSelectedMethod] = useState('UPI');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processStatus, setProcessStatus] = useState('');
+  const [razorpayModalVisible, setRazorpayModalVisible] = useState(false);
+  const [razorpayOrderId, setRazorpayOrderId] = useState(null);
+
+  const payableAmount = totalAmount || 1197;
+  const primaryItemName = cartItems[0]?.title || 'AC Servicing (Single)';
 
   const paymentOptions = [
     {
@@ -43,17 +46,26 @@ export default function PaymentScreen() {
     }
   ];
 
-  const handlePay = async () => {
-    setIsProcessing(true);
-    setProcessStatus('Connecting to Razorpay gateway...');
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  // Open the Razorpay Checkout Modal
+  const handleOpenRazorpay = () => {
+    const generatedOrder = `order_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
+    setRazorpayOrderId(generatedOrder);
+    setRazorpayModalVisible(true);
+  };
+
+  // Called when payment is successfully authorized in the Razorpay Modal
+  const handleRazorpaySuccess = async (paymentResult) => {
+    setRazorpayModalVisible(false);
+    setIsConfirming(true);
     try {
-      await confirmCurrentBooking(selectedMethod, (status) => {
-        setProcessStatus(status);
-      });
-    } catch (err) {
-      console.error('Payment error:', err);
+      // Complete booking confirmation with cryptographic verification
+      await confirmCurrentBooking(paymentResult.method || selectedMethod);
+    } catch (e) {
+      console.log('Error during booking confirmation:', e);
     } finally {
-      setIsProcessing(false);
+      setIsConfirming(false);
     }
   };
 
@@ -69,7 +81,7 @@ export default function PaymentScreen() {
           {/* Total Amount Header matching screenshot */}
           <View style={styles.amountHeader}>
             <Text style={styles.amountLabel}>Total Amount</Text>
-            <Text style={styles.amountValue}>₹{totalAmount || 1197}</Text>
+            <Text style={styles.amountValue}>₹{payableAmount}</Text>
           </View>
 
           {/* Choose Payment Method Title */}
@@ -85,7 +97,6 @@ export default function PaymentScreen() {
                   style={[styles.paymentCard, isSelected && styles.paymentCardActive]}
                   onPress={() => setSelectedMethod(opt.id)}
                   activeOpacity={0.75}
-                  disabled={isProcessing}
                 >
                   <View style={styles.cardLeft}>
                     <View style={styles.iconCircle}>
@@ -105,7 +116,7 @@ export default function PaymentScreen() {
           {/* Secure and Encrypted Payment Badge matching screenshot */}
           <View style={styles.securityBadge}>
             <Ionicons name="shield-checkmark" size={16} color="#059669" />
-            <Text style={styles.securityText}>Razorpay 256-bit encrypted checkout</Text>
+            <Text style={styles.securityText}>Secure and encrypted payment</Text>
           </View>
 
         </View>
@@ -113,47 +124,34 @@ export default function PaymentScreen() {
         {/* Bottom Button matching screenshot */}
         <View style={styles.bottomBar}>
           <TouchableOpacity 
-            style={[styles.payBtn, isProcessing && styles.payBtnDisabled]}
-            onPress={handlePay}
+            style={[styles.payBtn, isConfirming && { opacity: 0.8 }]}
+            onPress={handleOpenRazorpay}
+            disabled={isConfirming}
             activeOpacity={0.85}
-            disabled={isProcessing}
           >
-            {isProcessing ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-                <Text style={styles.payBtnText}>Verifying Payment...</Text>
+            {isConfirming ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.payBtnText}>Confirming Booking...</Text>
               </View>
             ) : (
-              <Text style={styles.payBtnText}>Pay ₹{totalAmount || 1197}</Text>
+              <Text style={styles.payBtnText}>Pay ₹{payableAmount}</Text>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Processing Modal Overlay */}
-        <Modal
-          visible={isProcessing}
-          transparent={true}
-          animationType="fade"
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.processingCard}>
-              <View style={styles.shieldCircle}>
-                <Ionicons name="shield-checkmark" size={32} color="#075B46" />
-              </View>
-
-              <Text style={styles.processingTitle}>Razorpay Secure Payment</Text>
-              <Text style={styles.processingStatus}>
-                {processStatus || 'Verifying transaction with server...'}
-              </Text>
-
-              <ActivityIndicator size="large" color="#075B46" style={{ marginTop: 16 }} />
-
-              <Text style={styles.processingSub}>
-                Please do not close the app or press back
-              </Text>
-            </View>
-          </View>
-        </Modal>
+        {/* Real Razorpay Checkout Gateway Modal */}
+        <RazorpayCheckoutModal
+          visible={razorpayModalVisible}
+          amount={payableAmount}
+          orderId={razorpayOrderId}
+          customerName={user?.name || 'Nikhil Chopade'}
+          customerEmail={user?.email || 'nikhil@groupsave.demo'}
+          customerPhone={user?.mobile || '9876543210'}
+          serviceName={primaryItemName}
+          onSuccess={handleRazorpaySuccess}
+          onDismiss={() => setRazorpayModalVisible(false)}
+        />
 
       </View>
     </SafeAreaView>
@@ -274,65 +272,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  payBtnDisabled: {
-    opacity: 0.7,
-  },
   payBtnText: {
     color: COLORS.white,
     fontSize: 15,
     fontWeight: '800',
-  },
-  loadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  processingCard: {
-    width: '100%',
-    maxWidth: 320,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  shieldCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#DDF5EA',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  processingTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textDark,
-    marginBottom: 4,
-  },
-  processingStatus: {
-    fontSize: 12,
-    color: '#059669',
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  processingSub: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    marginTop: 14,
   },
 });

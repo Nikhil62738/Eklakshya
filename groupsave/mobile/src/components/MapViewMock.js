@@ -1,13 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Rect, Path, Circle, Line } from 'react-native-svg';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Svg, { Rect, Path, Circle, Line, G } from 'react-native-svg';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 
-export default function MapViewMock() {
+export default function MapViewMock({
+  selectedProvider,
+  onSelectProvider,
+  providers = []
+}) {
+  const currentDist = selectedProvider?.distance || '1.2 km';
+  const currentTime = selectedProvider?.travelTime || '4 mins';
+
   return (
     <View style={styles.mapContainer}>
-      {/* Stylized Vector Map Background */}
+      {/* Stylized Vector Map Background matching screenshot */}
       <Svg height="100%" width="100%" viewBox="0 0 400 240" style={styles.svg}>
         {/* Soft Map background */}
         <Rect x="0" y="0" width="400" height="240" fill="#EBF4F0" />
@@ -40,19 +47,27 @@ export default function MapViewMock() {
         <Circle cx="220" cy="120" r="3" fill="#0284C7" />
       </Svg>
 
-      {/* Pin 1: Provider Pin 1 (Top right) */}
-      <View style={[styles.pinWrapper, { top: 38, left: 260 }]}>
+      {/* Pin 1: Cool Air Experts Pin (Top right) */}
+      <TouchableOpacity 
+        style={[styles.pinWrapper, { top: 34, left: 256 }]}
+        onPress={() => onSelectProvider && providers[0] && onSelectProvider(providers[0])}
+        activeOpacity={0.7}
+      >
         <View style={styles.providerPin}>
-          <Ionicons name="location" size={24} color="#DC2626" />
+          <Ionicons name="location" size={26} color="#DC2626" />
         </View>
-      </View>
+      </TouchableOpacity>
 
-      {/* Pin 2: Provider Pin 2 (Left) */}
-      <View style={[styles.pinWrapper, { top: 120, left: 70 }]}>
+      {/* Pin 2: FreshCool Service Pin (Left) */}
+      <TouchableOpacity 
+        style={[styles.pinWrapper, { top: 114, left: 66 }]}
+        onPress={() => onSelectProvider && providers[1] && onSelectProvider(providers[1])}
+        activeOpacity={0.7}
+      >
         <View style={styles.providerPin}>
-          <Ionicons name="location" size={22} color="#DC2626" />
+          <Ionicons name="location" size={24} color="#EA580C" />
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Pin 3: Customer Location Pin (Green circle with person/center) */}
       <View style={[styles.pinWrapper, { top: 168, left: 90 }]}>
@@ -61,21 +76,21 @@ export default function MapViewMock() {
         </View>
       </View>
 
-      {/* Pin 4: Intermediate Point (Blue node) */}
-      <View style={[styles.pinWrapper, { top: 130, left: 132 }]}>
+      {/* Route Point 1 (Blue node) */}
+      <View style={[styles.pinWrapper, { top: 132, left: 133 }]}>
         <View style={styles.routeNode} />
       </View>
 
-      {/* Pin 5: Another Route Point */}
-      <View style={[styles.pinWrapper, { top: 110, left: 212 }]}>
+      {/* Route Point 2 (Blue node) */}
+      <View style={[styles.pinWrapper, { top: 112, left: 213 }]}>
         <View style={styles.routeNode} />
       </View>
 
       {/* Floating Travel Time Pill Badge matching screenshot: "1.2 km (4 mins)" */}
       <View style={styles.travelBadge}>
         <Feather name="arrow-up-right" size={14} color={COLORS.white} />
-        <Text style={styles.travelBadgeText}>1.2 km</Text>
-        <Text style={styles.travelBadgeSubText}>(4 mins)</Text>
+        <Text style={styles.travelBadgeText}>{currentDist}</Text>
+        <Text style={styles.travelBadgeSubText}>({currentTime})</Text>
       </View>
     </View>
   );
@@ -135,7 +150,7 @@ const styles = StyleSheet.create({
   },
   travelBadge: {
     position: 'absolute',
-    top: 70,
+    top: 66,
     right: 18,
     flexDirection: 'row',
     alignItems: 'center',
@@ -161,4 +176,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

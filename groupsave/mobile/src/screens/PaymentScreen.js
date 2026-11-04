@@ -4,9 +4,11 @@ import {
   Text, 
   TouchableOpacity, 
   StyleSheet, 
-  SafeAreaView 
+  SafeAreaView,
+  ActivityIndicator,
+  Modal
 } from 'react-native';
-import { Feather, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 import { useApp } from '../context/AppContext';
 import Header from '../components/Header';
@@ -14,6 +16,8 @@ import Header from '../components/Header';
 export default function PaymentScreen() {
   const { navigate, totalAmount, confirmCurrentBooking } = useApp();
   const [selectedMethod, setSelectedMethod] = useState('UPI');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processStatus, setProcessStatus] = useState('');
 
   const paymentOptions = [
     {
@@ -39,8 +43,18 @@ export default function PaymentScreen() {
     }
   ];
 
-  const handlePay = () => {
-    confirmCurrentBooking(selectedMethod);
+  const handlePay = async () => {
+    setIsProcessing(true);
+    setProcessStatus('Connecting to Razorpay gateway...');
+    try {
+      await confirmCurrentBooking(selectedMethod, (status) => {
+        setProcessStatus(status);
+      });
+    } catch (err) {
+      console.error('Payment error:', err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -71,6 +85,7 @@ export default function PaymentScreen() {
                   style={[styles.paymentCard, isSelected && styles.paymentCardActive]}
                   onPress={() => setSelectedMethod(opt.id)}
                   activeOpacity={0.75}
+                  disabled={isProcessing}
                 >
                   <View style={styles.cardLeft}>
                     <View style={styles.iconCircle}>
@@ -90,7 +105,7 @@ export default function PaymentScreen() {
           {/* Secure and Encrypted Payment Badge matching screenshot */}
           <View style={styles.securityBadge}>
             <Ionicons name="shield-checkmark" size={16} color="#059669" />
-            <Text style={styles.securityText}>Secure and encrypted payment</Text>
+            <Text style={styles.securityText}>Razorpay 256-bit encrypted checkout</Text>
           </View>
 
         </View>
@@ -98,13 +113,47 @@ export default function PaymentScreen() {
         {/* Bottom Button matching screenshot */}
         <View style={styles.bottomBar}>
           <TouchableOpacity 
-            style={styles.payBtn}
+            style={[styles.payBtn, isProcessing && styles.payBtnDisabled]}
             onPress={handlePay}
             activeOpacity={0.85}
+            disabled={isProcessing}
           >
-            <Text style={styles.payBtnText}>Pay ₹{totalAmount || 1197}</Text>
+            {isProcessing ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.payBtnText}>Verifying Payment...</Text>
+              </View>
+            ) : (
+              <Text style={styles.payBtnText}>Pay ₹{totalAmount || 1197}</Text>
+            )}
           </TouchableOpacity>
         </View>
+
+        {/* Processing Modal Overlay */}
+        <Modal
+          visible={isProcessing}
+          transparent={true}
+          animationType="fade"
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.processingCard}>
+              <View style={styles.shieldCircle}>
+                <Ionicons name="shield-checkmark" size={32} color="#075B46" />
+              </View>
+
+              <Text style={styles.processingTitle}>Razorpay Secure Payment</Text>
+              <Text style={styles.processingStatus}>
+                {processStatus || 'Verifying transaction with server...'}
+              </Text>
+
+              <ActivityIndicator size="large" color="#075B46" style={{ marginTop: 16 }} />
+
+              <Text style={styles.processingSub}>
+                Please do not close the app or press back
+              </Text>
+            </View>
+          </View>
+        </Modal>
 
       </View>
     </SafeAreaView>
@@ -225,10 +274,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  payBtnDisabled: {
+    opacity: 0.7,
+  },
   payBtnText: {
     color: COLORS.white,
     fontSize: 15,
     fontWeight: '800',
   },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  processingCard: {
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  shieldCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#DDF5EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  processingTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textDark,
+    marginBottom: 4,
+  },
+  processingStatus: {
+    fontSize: 12,
+    color: '#059669',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  processingSub: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginTop: 14,
+  },
 });
-
